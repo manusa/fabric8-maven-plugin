@@ -112,6 +112,15 @@ public class PushMojo extends io.fabric8.maven.docker.PushMojo {
     @Parameter(property = "fabric8.build.jib", defaultValue = "false")
     private boolean isJib;
 
+    @Parameter(property = "docker.push.retries", defaultValue = "0")
+    private int retries;
+
+    /**
+     * Skip building tags
+     */
+    @Parameter(property = "docker.skip.tag", defaultValue = "false")
+    private boolean skipTag;
+
     @Override
     protected String getLogPrefix() {
         return "F8> ";
@@ -123,7 +132,7 @@ public class PushMojo extends io.fabric8.maven.docker.PushMojo {
 
     @Override
     protected boolean isDockerAccessRequired() {
-        return mode == RuntimeMode.kubernetes && !isJibMode();
+        return !isJibMode();
     }
 
     private String getProperty(String key) {
@@ -157,7 +166,7 @@ public class PushMojo extends io.fabric8.maven.docker.PushMojo {
                 jibPush(imageConfiguration, project, getRegistryConfig(pushRegistry), outputDirectory, log);
             }
         } else {
-            super.executeInternal(hub);
+            hub.getRegistryService().pushImages(getResolvedImages(), retries, getRegistryConfig(pushRegistry), skipTag);
         }
     }
 
