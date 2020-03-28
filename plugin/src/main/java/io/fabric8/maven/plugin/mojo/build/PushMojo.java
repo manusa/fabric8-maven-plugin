@@ -59,6 +59,15 @@ public class PushMojo extends io.fabric8.maven.docker.PushMojo {
     @Parameter(property = "fabric8.skip", defaultValue = "false")
     protected boolean skip;
 
+    @Parameter(property = "docker.skip.push", defaultValue = "false")
+    private boolean fabric8SkipPush;
+
+    @Parameter(alias = "pushRegistry", property = "docker.push.registry")
+    private String fabric8PushRegistry;
+
+    @Parameter(alias = "outputDirectory", property = "docker.target.dir", defaultValue="target/docker")
+    private String fabric8OutputDirectory;
+
     /**
      * Profile to use. A profile contains the enrichers and generators to
      * use as well as their configuration. Profiles are looked up
@@ -97,29 +106,9 @@ public class PushMojo extends io.fabric8.maven.docker.PushMojo {
     @Parameter(property = "fabric8.build.strategy" )
     private OpenShiftBuildStrategy buildStrategy = OpenShiftBuildStrategy.s2i;
 
-    @Parameter(property = "docker.skip.push", defaultValue = "false")
-    private boolean skipPush;
-
-    @Parameter(property = "docker.push.registry")
-    private String pushRegistry;
-
-    @Parameter(property = "docker.source.dir", defaultValue="src/main/docker")
-    private String sourceDirectory;
-
-    @Parameter(property = "docker.target.dir", defaultValue="target/docker")
-    private String outputDirectory;
 
     @Parameter(property = "fabric8.build.jib", defaultValue = "false")
     private boolean isJib;
-
-    @Parameter(property = "docker.push.retries", defaultValue = "0")
-    private int retries;
-
-    /**
-     * Skip building tags
-     */
-    @Parameter(property = "docker.skip.tag", defaultValue = "false")
-    private boolean skipTag;
 
     @Override
     protected String getLogPrefix() {
@@ -145,7 +134,7 @@ public class PushMojo extends io.fabric8.maven.docker.PushMojo {
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
-        if (skip || skipPush) {
+        if (skip || fabric8SkipPush) {
             return;
         }
 
@@ -157,16 +146,16 @@ public class PushMojo extends io.fabric8.maven.docker.PushMojo {
      */
     @Override
     public void executeInternal(ServiceHub hub) throws DockerAccessException, MojoExecutionException {
-        if (skipPush) {
+        if (fabric8SkipPush) {
             return;
         }
 
         if (isJibMode()) {
             for (ImageConfiguration imageConfiguration : getResolvedImages()) {
-                jibPush(imageConfiguration, project, getRegistryConfig(pushRegistry), outputDirectory, log);
+                jibPush(imageConfiguration, project, getRegistryConfig(fabric8PushRegistry), fabric8OutputDirectory, log);
             }
         } else {
-            hub.getRegistryService().pushImages(getResolvedImages(), retries, getRegistryConfig(pushRegistry), skipTag);
+            super.executeInternal(hub);
         }
     }
 
